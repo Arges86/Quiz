@@ -12,6 +12,7 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 	<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=css&skin=desert"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
 	<script src="https://arges86.homeserver.com/how_to/js/scrl_to_top.js"></script>
 	<link rel="stylesheet" href="/how_to/css/background_no_img.css">
 	<link rel="stylesheet" href="/how_to/css/header.css">
@@ -54,6 +55,15 @@
 		#answers {
 			visibility: hidden;
 		}
+		#final_score {
+			visibility: hidden;
+		}
+		#show_score {
+			visibility: hidden;
+		}
+		#myChart {
+			border-radius: 25px;
+		}
 	</style>
 </head>
 
@@ -89,14 +99,18 @@
 				<button type="button" id="button_NextQuestion" class="btn btn-info">Next Question</button>
 				<br>
 				<span id="results"></span>
+				<button type='button' id='final_score' class='btn btn-success'>Submit Your Score</button></br>
+<!-- 				<button type='button' id='show_score' class='btn btn-success'>See all the scores</button> -->
 				<br>
 				<span id="errors"></span>
 				<br>
 			</div>
 			<div class="col-md-4">
+				<canvas id="myChart" width="400" height="auto"></canvas>
+				<br>
 			</div>
 			<div class="col-md-3">
-				Your Score: <span id="score"></span>
+				<h3>Your Score: <span id="score"></span></h3>
 			</div>
 		</div>
 	</div>
@@ -107,9 +121,11 @@
 			//sets initial score
 			var score = 0;
 			$('#score').html(score);
+			var totalNum;
 			//Find the total number of questions and posts it
 				$.post( "php/CountTotal.php", function( data ) {
-					$("#Qtotal").html(data);
+					var totalNum = data;
+					$("#Qtotal").html(totalNum);
 				});
 			//ajax call for getting question
 			var ajaxCall = function(QuestionNumber) {
@@ -143,13 +159,16 @@
 					} catch (e) {
 						//Catches error, like at end of database
 						console.log(e);
+						console.log(question);
 						$('#results').html("I'm sorry, an error occured. Please Try again");
 					}
 					//outputs a '0' if there are no questions left. Triggering end of quiz
 					if (jdata == 0 ) {
-						$('#results').html("End of test!<br>Your final score is "+score);
+						$('#results').html("End of test!<br>Your final score is "+score+"<br>");
 						//disables answer buttons
 						$("#button_UserSubmit").siblings().andSelf().prop("disabled", true);
+						//shows Final Submit button_UserSubmit
+						$("#final_score").css('visibility', 'visible');
 					} else {
 						console.log(jdata);
 						$("#answers").css('visibility', 'visible');
@@ -203,6 +222,121 @@
 					}
 				}
 			});
+			//Function adds user's score to db
+			$("#final_score").click(function(e) {
+				// Prevent Default Submission
+				e.preventDefault();
+				console.log(score);
+				var form ={'score':score};
+				$.ajax({
+					type: 'POST',
+					url: 'php/score.php',
+					data: form,
+					success: function(data) {
+						console.log(data);
+						if (data =="1") {
+							$('#results').html("Your score was added!")
+							$("#final_score").css('visibility', 'hidden');
+							$('#show_score').css('visibility','visible');
+						} else {
+							$('#errors').html("I'm sorry, something whent wrong");
+						}
+					}
+				})
+			});
+			//Function shows all the stored scores
+			$("#button_NextQuestion").click(function(e) {
+				// Prevent Default Submission
+				e.preventDefault();
+				$.post( "php/scoreSearch.php")
+					.done(function(data) {
+					$("#myChart").html(" ");
+					try {
+						var gdata = $.parseJSON(data);
+						console.log(gdata);
+					}catch (e){
+						$('#errors').html("I'm sorry, something whent wrong.<br>Please try again later");
+						console.log(e);
+					}
+					//Takes highest y axis value, adds one and will use it later for maximum y chart length
+					var i = (gdata.length)-1;
+					var yAxis = parseInt((gdata[i]["y"]))+1;
+					//creates chart of results for display
+					var ctx = $("#myChart");
+					var color = Chart.helpers.color;
+					window.chartColors = {
+						red: 'rgb(255, 99, 132)',
+						orange: 'rgb(255, 159, 64)',
+						yellow: 'rgb(255, 205, 86)',
+						green: 'rgb(75, 192, 192)',
+						blue: 'rgb(54, 162, 235)',
+						purple: 'rgb(153, 102, 255)',
+						grey: 'rgb(201, 203, 207)'
+					};
+					var myChart = new Chart(ctx, {
+						type: 'scatter',
+						data: {
+								datasets: [{
+									label: 'Number of Scores',
+									data: gdata,
+									pointStyle: 'rectRot',
+									radius: '7',
+									borderColor: color(window.chartColors.grey).alpha(0.5).rgbString(),
+									backgroundColor: color(window.chartColors.blue).alpha(0.2).rgbString(),
+								}, {
+								data: [{ //shows the user's score amoungst the others
+									x: score,
+									y: 1,
+								}],
+								label: "Your Score",
+								radius: "7",
+								pointStyle: 'triangle',
+								backgroundColor: color(window.chartColors.red).alpha(0.4).rgbString(),
+								}
+								]
+						},
+						options: {
+							title: {
+								display: true,
+								text: 'Count of Each Score'
+	            },
+							scales: {
+								xAxes: [{
+									type: 'linear',
+									position: 'bottom',
+									scaleLabel: {
+	            			labelString: 'Score',
+	            			display: true,
+	            		},
+									ticks: {
+										fontColor: "#008000",
+	            			userCallback: function(tick) {
+	            				return tick.toString() + "pts";
+	            			}},
+								}],
+								yAxes: [{
+									type: 'linear',
+									scaleLabel: {
+	            			labelString: 'Count',
+	            			display: true,
+	            		},
+									ticks: {
+										fontColor: "#DB8E00",
+										min: 0,
+										max: yAxis,
+										//forces y axis to be 1 unit
+										stepSize: 1
+									}
+								}]
+							}
+						}
+					});
+					$("#myChart").css('background', '#FFF');
+					})
+					.fail(function() {
+					$('#errors').html("I'm sorry, something whent wrong.<br>Please try again later");
+					});
+				});
 		});
 	</script>
 </body>
