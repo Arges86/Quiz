@@ -23,6 +23,7 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
   <![endif]-->
 	<link rel="stylesheet" href="/how_to/css/style.css">
+	<link rel="stylesheet" href="css/quiz.css">
 	<!-- Analytics -->
 	<script>
 		(function(i, s, o, g, r, a, m) {
@@ -40,31 +41,6 @@
 		ga('send', 'pageview');
 	</script>
 	<!-- Analytics -->
-	<style>
-		input[type=text] {
-			color: #000;
-		}
-		#errors {
-			color: #FF0000;
-			font-weight: bold;
-		}
-		#contact {
-			position: fixed;
-			bottom: 0;
-		}
-		#answers {
-			visibility: hidden;
-		}
-		#final_score {
-			visibility: hidden;
-		}
-		#show_score {
-			visibility: hidden;
-		}
-		#myChart {
-			border-radius: 25px;
-		}
-	</style>
 </head>
 
 <body>
@@ -86,7 +62,8 @@
 		<div class="row">
 			<div class="col-md-5">
 				<h3>Question: #<span id="QNumber"></span> Out of: <span id="Qtotal"></span></h3> <br>
-				<span id="question">You ready to start?
+				<span id="question"><h4>A series of 20 random questions</h4>
+					<br>Are you ready to start?
     </span> &nbsp; &nbsp; &nbsp;
 				<span id="answers">
 			<br>Answer:<br>
@@ -96,6 +73,7 @@
 			<button type="button" value="4" id="button_UserSubmit" class="btn btn-primary"></button>&nbsp;
 		</span>
 				<br>
+				<span id="destroy_button"><button type="button" id="button_Begin" class="btn btn-info">Begin!</button></span>
 				<button type="button" id="button_NextQuestion" class="btn btn-info">Next Question</button>
 				<br>
 				<span id="results"></span>
@@ -105,239 +83,17 @@
 				<span id="errors"></span>
 				<br>
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-5">
 				<canvas id="myChart" width="400" height="auto"></canvas>
 				<br>
 			</div>
-			<div class="col-md-3">
-				<h3>Your Score: <span id="score"></span></h3>
+			<div class="col-md-2">
+				<h3>Your Score: <span id="score"></span></h3><br>
+				<button type="button" id="button_reset" class="btn btn-reset">Reset And try again</button>
 			</div>
 		</div>
 	</div>
-	<script>
-		$(document).ready(function() {
-			//Sets initial questionnumber (aka db row number) to zero
-			var QuestionNumber = 0;
-			//sets initial score
-			var score = 0;
-			$('#score').html(score);
-			var totalNum;
-			//Find the total number of questions and posts it
-				$.post( "php/CountTotal.php", function( data ) {
-					var totalNum = data;
-					$("#Qtotal").html(totalNum);
-				});
-			//ajax call for getting question
-			var ajaxCall = function(QuestionNumber) {
-				// Return the $.ajax promise
-				return $.ajax({
-					data: QuestionNumber,
-					url: "php/QuestionAnswer.php",
-					type: 'POST',
-					cache: false,
-					beforeSend: function() {
-						//deletes any results
-						$('#results').html("");
-					},
-				});
-			};
-			var jdata = null;
-			//Next Question button
-			$("#button_NextQuestion").click(function(e) {
-				// Prevent Default Submission
-				e.preventDefault();
-				//hides 'Next Question' button
-				$("#button_NextQuestion").css('visibility', 'hidden');
-				//Adds one to index incrementing questions
-				QuestionNumber++;
-				//Makes call
-				var getQuestion = ajaxCall({QuestionNumber});
-				//when call is done...
-				$.when(getQuestion).then(function(question) {
-					try {
-						jdata = $.parseJSON(question);
-					} catch (e) {
-						//Catches error, like at end of database
-						console.log(e);
-						console.log(question);
-						$('#results').html("I'm sorry, an error occured. Please Try again");
-					}
-					//outputs a '0' if there are no questions left. Triggering end of quiz
-					if (jdata == 0 ) {
-						$('#results').html("End of test!<br>Your final score is "+score+"<br>");
-						//disables answer buttons
-						$("#button_UserSubmit").siblings().andSelf().prop("disabled", true);
-						//shows Final Submit button_UserSubmit
-						$("#final_score").css('visibility', 'visible');
-					} else {
-						console.log(jdata);
-						$("#answers").css('visibility', 'visible');
-						$("#button_NextQuestion").css('visibility', 'hidden');
-						//Enables answer buttons
-						$("#button_UserSubmit").siblings().andSelf().prop("disabled", false);
-						//Shows Question
-						$('#question').fadeIn('slow').html(jdata.question);
-						//Shows Question number
-						$('#QNumber').html(jdata.id);
-						//Enters values in buttons
-						$("button[value='1']").html(jdata.answer1);
-						$("button[value='2']").html(jdata.answer2);
-						$("button[value='3']").html(jdata.answer3);
-						$("button[value='4']").html(jdata.answer4);
-					}
-				});
-			});
-			//User clicks on an answer
-			$("#button_UserSubmit").siblings().andSelf().click(function(e) {
-				// Prevent Default Submission
-				e.preventDefault();
-				//disables answer buttons
-				$("#button_UserSubmit").siblings().andSelf().prop("disabled", true);
-				//shows 'Next Question' button
-				$("#button_NextQuestion").css('visibility', 'visible');
-				//Gets Question # that user chose
-				var UserAnswer = $(this).attr("value");
-				//Determines if answer is correct. Increases score by one if correct
-				console.log(UserAnswer+"->"+jdata.Key);
-				if (UserAnswer == jdata.Key) {
-					$('#results').html("You are correct!");
-					score++;
-					console.log(score);
-					$('#score').html(score);
-				} else {
-				//switch statement finds correct answer and displays it
-					switch (jdata.Key) {
-						case 1:
-							$('#results').html("I'm sorry, thats not the right answer.<br>The correct answer is " + jdata.answer1);
-							break;
-						case 2:
-							$('#results').html("I'm sorry, thats not the right answer.<br>The correct answer is " + jdata.answer2);
-							break;
-						case 3:
-							$('#results').html("I'm sorry, thats not the right answer.<br>The correct answer is " + jdata.answer3);
-							break;
-						case 4:
-							$('#results').html("I'm sorry, thats not the right answer.<br>The correct answer is " + jdata.answer4);
-							break;
-					}
-				}
-			});
-			//Function adds user's score to db
-			$("#final_score").click(function(e) {
-				// Prevent Default Submission
-				e.preventDefault();
-				console.log(score);
-				var form ={'score':score};
-				$.ajax({
-					type: 'POST',
-					url: 'php/score.php',
-					data: form,
-					success: function(data) {
-						console.log(data);
-						if (data =="1") {
-							$('#results').html("Your score was added!")
-							$("#final_score").css('visibility', 'hidden');
-							$('#show_score').css('visibility','visible');
-						} else {
-							$('#errors').html("I'm sorry, something whent wrong");
-						}
-					}
-				})
-			});
-			//Function shows all the stored scores
-			$("#button_NextQuestion").click(function(e) {
-				// Prevent Default Submission
-				e.preventDefault();
-				$.post( "php/scoreSearch.php")
-					.done(function(data) {
-					$("#myChart").html(" ");
-					try {
-						var gdata = $.parseJSON(data);
-						console.log(gdata);
-					}catch (e){
-						$('#errors').html("I'm sorry, something whent wrong.<br>Please try again later");
-						console.log(e);
-					}
-					//Takes highest y axis value, adds one and will use it later for maximum y chart length
-					var i = (gdata.length)-1;
-					var yAxis = parseInt((gdata[i]["y"]))+1;
-					//creates chart of results for display
-					var ctx = $("#myChart");
-					var color = Chart.helpers.color;
-					window.chartColors = {
-						red: 'rgb(255, 99, 132)',
-						orange: 'rgb(255, 159, 64)',
-						yellow: 'rgb(255, 205, 86)',
-						green: 'rgb(75, 192, 192)',
-						blue: 'rgb(54, 162, 235)',
-						purple: 'rgb(153, 102, 255)',
-						grey: 'rgb(201, 203, 207)'
-					};
-					var myChart = new Chart(ctx, {
-						type: 'scatter',
-						data: {
-								datasets: [{
-									label: 'Number of Scores',
-									data: gdata,
-									pointStyle: 'rectRot',
-									radius: '7',
-									borderColor: color(window.chartColors.grey).alpha(0.5).rgbString(),
-									backgroundColor: color(window.chartColors.blue).alpha(0.2).rgbString(),
-								}, {
-								data: [{ //shows the user's score amoungst the others
-									x: score,
-									y: 1,
-								}],
-								label: "Your Score",
-								radius: "7",
-								pointStyle: 'triangle',
-								backgroundColor: color(window.chartColors.red).alpha(0.4).rgbString(),
-								}
-								]
-						},
-						options: {
-							title: {
-								display: true,
-								text: 'Count of Each Score'
-	            },
-							scales: {
-								xAxes: [{
-									type: 'linear',
-									position: 'bottom',
-									scaleLabel: {
-	            			labelString: 'Score',
-	            			display: true,
-	            		},
-									ticks: {
-										fontColor: "#008000",
-	            			userCallback: function(tick) {
-	            				return tick.toString() + "pts";
-	            			}},
-								}],
-								yAxes: [{
-									type: 'linear',
-									scaleLabel: {
-	            			labelString: 'Count',
-	            			display: true,
-	            		},
-									ticks: {
-										fontColor: "#DB8E00",
-										min: 0,
-										max: yAxis,
-										//forces y axis to be 1 unit
-										stepSize: 1
-									}
-								}]
-							}
-						}
-					});
-					$("#myChart").css('background', '#FFF');
-					})
-					.fail(function() {
-					$('#errors').html("I'm sorry, something whent wrong.<br>Please try again later");
-					});
-				});
-		});
-	</script>
+<!-- 	Loads JS file that does work-->
+	<script src="js/quiz.js"></script>
 </body>
 </html>

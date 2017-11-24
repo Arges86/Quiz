@@ -1,0 +1,78 @@
+input[type=text] {
+  color: #000;
+}
+
+#errors {
+  color: #FF0000;
+  font-weight: bold;
+}
+
+#contact {
+  position: fixed;
+  bottom: 0;
+}
+
+#answers {
+  visibility: hidden;
+}
+
+#final_score {
+  visibility: hidden;
+}
+#button_NextQuestion {
+  visibility: hidden;
+}
+
+#show_score {
+  visibility: hidden;
+}
+
+#myChart {
+  border-radius: 25px;
+}
+
+.btn-reset {
+  color: #FFFFFF;
+  background-color: #611BBD;
+  border-color: #130269;
+}
+
+.btn-reset:hover,
+.btn-reset:focus,
+.btn-reset:active,
+.btn-reset.active,
+.open .dropdown-toggle.btn-reset {
+  color: #FFFFFF;
+  background-color: #49247A;
+  border-color: #130269;
+}
+
+.btn-reset:active,
+.btn-reset.active,
+.open .dropdown-toggle.btn-reset {
+  background-image: none;
+}
+
+.btn-reset.disabled,
+.btn-reset[disabled],
+fieldset[disabled] .btn-reset,
+.btn-reset.disabled:hover,
+.btn-reset[disabled]:hover,
+fieldset[disabled] .btn-reset:hover,
+.btn-reset.disabled:focus,
+.btn-reset[disabled]:focus,
+fieldset[disabled] .btn-reset:focus,
+.btn-reset.disabled:active,
+.btn-reset[disabled]:active,
+fieldset[disabled] .btn-reset:active,
+.btn-reset.disabled.active,
+.btn-reset[disabled].active,
+fieldset[disabled] .btn-reset.active {
+  background-color: #611BBD;
+  border-color: #130269;
+}
+
+.btn-reset .badge {
+  color: #611BBD;
+  background-color: #FFFFFF;
+}
